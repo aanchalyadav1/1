@@ -8,3 +8,9 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+// Hide loading screen after React renders
+const loadingElement = document.getElementById('loading');
+if (loadingElement) {
+  loadingElement.style.display = 'none';
+}
