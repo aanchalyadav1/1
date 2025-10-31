@@ -18,11 +18,24 @@ function Login() {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input type="text" placeholder={t('username')} onChange={(e) => setForm({ ...form, username: e.target.value })} required />
-      <input type="password" placeholder={t('password')} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
-      <button type="submit">{t('login')}</button>
-    </form>
+    <div className="card">
+      <h2>{t('login')}</h2>
+      <form onSubmit={handleSubmit}>
+        <input 
+          type="text" 
+          placeholder={t('username')} 
+          onChange={(e) => setForm({ ...form, username: e.target.value })} 
+          required 
+        />
+        <input 
+          type="password" 
+          placeholder={t('password')} 
+          onChange={(e) => setForm({ ...form, password: e.target.value })} 
+          required 
+        />
+        <button type="submit">{t('login')}</button>
+      </form>
+    </div>
   );
 }
 
