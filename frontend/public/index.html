@@ -2,14 +2,116 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta name="description" content="AI Music Recommendation App with Unique UI" />
+    <meta name="description" content="AI Music Recommendation App with Unique UI - Discover songs based on your emotions!" />
+    <meta name="keywords" content="AI, music, recommendations, emotions, Spotify" />
+    <meta name="author" content="Your Name" />
+    
+    <!-- Open Graph for Social Sharing -->
+    <meta property="og:title" content="AI Music Recommender" />
+    <meta property="og:description" content="Discover songs based on your emotions!" />
+    <meta property="og:image" content="%PUBLIC_URL%/favicon.ico" />
+    <meta property="og:url" content="https://your-frontend.onrender.com" />
+    <meta property="og:type" content="website" />
+    
+    <!-- Favicon -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    
+    <!-- Title -->
     <title>AI Music Recommender</title>
+    
+    <!-- Inline CSS for Custom Loading Screen and Basic Reset -->
+    <style>
+      /* Basic CSS Reset */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        background-color: #f0f0f0; /* Light background */
+        color: #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden; /* Prevent scroll during load */
+      }
+      
+      /* Custom Loading Screen */
+      #loading {
+        text-align: center;
+        animation: fadeIn 0.5s ease-in;
+      }
+      
+      #loading h1 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #007bff; /* Blue accent */
+      }
+      
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #007bff;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      /* Hide loading once React loads */
+      body.loaded #loading {
+        display: none;
+      }
+      
+      /* Root div for React */
+      #root {
+        display: none; /* Hidden until React takes over */
+      }
+      
+      body.loaded #root {
+        display: block;
+      }
+    </style>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <!-- Custom Loading Screen -->
+    <div id="loading">
+      <h1>AI Music Recommender</h1>
+      <div class="spinner"></div>
+      <p>Loading your personalized experience...</p>
+    </div>
+    
+    <!-- React Root -->
+    <noscript>
+      <div style="text-align: center; padding: 2rem;">
+        <h1>JavaScript Required</h1>
+        <p>This app requires JavaScript to run. Please enable it in your browser settings and reload the page.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
+    
+    <!-- Script to Hide Loading After React Loads -->
+    <script>
+      // Hide loading screen once React mounts
+      window.addEventListener('load', () => {
+        document.body.classList.add('loaded');
+      });
+    </script>
   </body>
 </html>
