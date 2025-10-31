@@ -12,7 +12,10 @@ app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)
 
-sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(client_id=Config.SPOTIFY_CLIENT_ID, client_secret=Config.SPOTIFY_CLIENT_SECRET))
+sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
+    client_id=Config.SPOTIFY_CLIENT_ID,
+    client_secret=Config.SPOTIFY_CLIENT_SECRET
+))
 
 emotion_genres = {
     'happy': 'pop',
@@ -23,6 +26,19 @@ emotion_genres = {
     'neutral': 'jazz',
     'disgust': 'classical'
 }
+
+# ✅ ADD THIS ROUTE to avoid 404 on Render root URL
+@app.route('/')
+def home():
+    return jsonify({
+        "message": "🎶 Backend is live on Render!",
+        "status": "running",
+        "routes": [
+            "/register", "/login", "/profile",
+            "/playlists", "/liked_songs",
+            "/detect_emotion", "/recommend"
+        ]
+    })
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -108,4 +124,6 @@ def recommend():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    # ✅ Bind to Render's assigned port (important)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
