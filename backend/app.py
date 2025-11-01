@@ -9,7 +9,7 @@ import os
 
 app = Flask(__name__)
 from flask_cors import CORS
-CORS(app, origins=["https://1-pk32mgnxt-aanchal-yadavs-projects-3d4dec53.vercel.app/"])  # Replace with your Vercel URL
+CORS(app, origins=["https://1-pk32mgnxt-aanchal-yadavs-projects-3d4dec53.vercel.app"])  # Fixed: Removed trailing slash
 app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)
@@ -38,7 +38,8 @@ def home():
         "routes": [
             "/register", "/login", "/profile",
             "/playlists", "/liked_songs",
-            "/detect_emotion", "/recommend"
+            "/detect_emotion", "/recommend",
+            "/forgot-password"
         ]
     })
 
@@ -122,6 +123,15 @@ def recommend():
     results = sp.recommendations(seed_genres=[genre], limit=10, market=language.upper())
     tracks = [{'id': t['id'], 'name': t['name'], 'artist': t['artists'][0]['name'], 'url': t['external_urls']['spotify']} for t in results['tracks']]
     return jsonify(tracks)
+
+# ✅ Added Forgot Password Route (inserted after /recommend)
+@app.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json()
+    # Basic implementation: Log the request (expand with email sending, e.g., Flask-Mail)
+    print(f"Password reset requested for {data['email']}")
+    # In production, send email with reset token
+    return jsonify({'message': 'Reset link sent'})
 
 if __name__ == '__main__':
     with app.app_context():
