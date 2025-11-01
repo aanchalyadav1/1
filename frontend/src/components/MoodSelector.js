@@ -1,5 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button, Typography, Box } from '@mui/material';
+import Lottie from 'lottie-react';
+import happyAnimation from './animations/happy.json'; // Download and place in src/components/animations/
 
 const moods = {
   happy: '😊',
@@ -15,14 +18,14 @@ function MoodSelector({ setEmotion }) {
   const { t } = useTranslation();
 
   return (
-    <div>
-      <h3>{t('selectMood')}</h3>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>{t('selectMood')}</Typography>
       {Object.entries(moods).map(([mood, emoji]) => (
-        <button key={mood} onClick={() => setEmotion(mood)}>
+        <Button key={mood} variant="outlined" sx={{ m: 1 }} onClick={() => setEmotion(mood)} startIcon={<Lottie animationData={happyAnimation} style={{ width: 30, height: 30 }} />}>
           {emoji} {t(mood)}
-        </button>
+        </Button>
       ))}
-    </div>
+    </Box>
   );
 }
 
