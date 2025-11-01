@@ -18,7 +18,10 @@ function Login() {
       localStorage.setItem('token', res.data.access_token);
       window.location.href = '/';
     } catch (err) {
-      alert('Error: ' + (err.response?.data?.message || 'Login failed'));
+      // Fixed: Safe error handling for CORS/network issues
+      const errorMessage = err.response?.data?.message || err.message || 'Network error or CORS issue. Check backend and env vars.';
+      alert('Login failed: ' + errorMessage);
+      console.error('Login error:', err);  // For debugging
     } finally {
       setLoading(false);
     }
@@ -32,8 +35,8 @@ function Login() {
       <Button variant="contained" startIcon={<LoginIcon />} fullWidth onClick={handleSubmit} disabled={loading}>
         {loading ? 'Logging in...' : t('login')}
       </Button>
-      <Typography sx={{ mt: 2 }}>{t('noAccount')} <Link to="/register">{t('register')}</Link></Typography>
-      <Typography><Link to="/forgot-password">{t('forgotPassword')}</Link></Typography>
+      <Typography sx={{ mt: 2 }}>Don't have an account? <Link to="/register">{t('register')}</Link></Typography>
+      <Typography><Link to="/forgot-password">Forgot Password?</Link></Typography>
     </Box>
   );
 }
