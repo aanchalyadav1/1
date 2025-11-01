@@ -8,6 +8,8 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import os
 
 app = Flask(__name__)
+from flask_cors import CORS
+CORS(app, origins=["https://1-pk32mgnxt-aanchal-yadavs-projects-3d4dec53.vercel.app/"])  # Replace with your Vercel URL
 app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)
