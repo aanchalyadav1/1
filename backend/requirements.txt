@@ -9,3 +9,4 @@ opencv-python
 requests
 psycopg2-binary
 gunicorn
+flask-mail
