@@ -1,11 +1,12 @@
 import axios from 'axios';
 
+// Create an Axios instance for backend API calls
 const api = axios.create({
-  baseURL: process.env.REACT_APP_BACKEND_URL || 'https://one-backend-6jy5.onrender.com',  // Your Render backend URL
-  withCredentials: true,  // Allows cookies/credentials if needed
+  baseURL: 'https://one-backend-6jy5.onrender.com',  // ✅ Correct backend Render URL
+  withCredentials: true,                              // Allows cookies if backend uses sessions
 });
 
-// Add JWT token to requests
+// ✅ Automatically attach JWT token to every request (if stored in localStorage)
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -14,12 +15,11 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// Handle responses (optional: add global error handling)
+// ✅ Global error handling (e.g., expired token → redirect to login)
 api.interceptors.response.use(
   response => response,
   error => {
     if (error.response?.status === 401) {
-      // Token expired, redirect to login
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
