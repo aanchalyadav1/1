@@ -3,8 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { motion } from 'framer-motion';
-import Particles from 'react-tsparticles';
-import { loadFull } from 'tsparticles';
+import Particles from 'react-tsparticles'; // ✅ Correct import
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
@@ -13,14 +12,10 @@ import './i18n';
 function App() {
   const [currentTheme, setCurrentTheme] = useState(
     createTheme({
-      palette: { mode: 'dark', primary: { main: '#1db954' } },
+      palette: { mode: 'dark', primary: { main: '#1db954' } }, // Spotify-like green
       typography: { fontFamily: 'Roboto, sans-serif' },
     })
   );
-
-  const particlesInit = async (main) => {
-    await loadFull(main);
-  };
 
   const updateTheme = (emotion) => {
     const emotionColors = {
@@ -32,9 +27,13 @@ function App() {
       surprise: '#ff9800',
       disgust: '#795548',
     };
+
     setCurrentTheme(
       createTheme({
-        palette: { mode: 'dark', primary: { main: emotionColors[emotion] || '#1db954' } },
+        palette: {
+          mode: 'dark',
+          primary: { main: emotionColors[emotion] || '#1db954' },
+        },
         typography: { fontFamily: 'Roboto, sans-serif' },
       })
     );
@@ -43,26 +42,14 @@ function App() {
   return (
     <ThemeProvider theme={currentTheme}>
       <CssBaseline />
-
-      {/* 🌟 Lightweight particle background */}
       <Particles
-        id="tsparticles"
-        init={particlesInit}
         options={{
-          background: { color: { value: '#000000' } },
-          fpsLimit: 60,
           particles: {
-            number: { value: 20 }, // fewer particles = faster
-            color: { value: '#1db954' },
-            move: { enable: true, speed: 0.6, outModes: 'out' },
+            number: { value: 50 },
+            move: { speed: 1 },
+            size: { value: 2 },
             opacity: { value: 0.3 },
-            size: { value: { min: 1, max: 3 } },
           },
-          interactivity: {
-            events: { onHover: { enable: true, mode: 'repulse' }, resize: true },
-            modes: { repulse: { distance: 100, duration: 0.4 } },
-          },
-          detectRetina: true,
         }}
         style={{
           position: 'absolute',
@@ -70,25 +57,36 @@ function App() {
           left: 0,
           width: '100%',
           height: '100%',
-          zIndex: -1,
+          zIndex: -1, // ✅ ensures particles stay in background
         }}
       />
-
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
         <div className="app-container">
           <Router>
             <Routes>
               <Route
                 path="/login"
-                element={<motion.div initial={{ x: -100 }} animate={{ x: 0 }}><Login /></motion.div>}
+                element={
+                  <motion.div initial={{ x: -100 }} animate={{ x: 0 }}>
+                    <Login />
+                  </motion.div>
+                }
               />
               <Route
                 path="/register"
-                element={<motion.div initial={{ x: 100 }} animate={{ x: 0 }}><Register /></motion.div>}
+                element={
+                  <motion.div initial={{ x: 100 }} animate={{ x: 0 }}>
+                    <Register />
+                  </motion.div>
+                }
               />
               <Route
                 path="/"
-                element={<motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}><Dashboard updateTheme={updateTheme} /></motion.div>}
+                element={
+                  <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }}>
+                    <Dashboard updateTheme={updateTheme} />
+                  </motion.div>
+                }
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
