@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Button, TextField, Typography, Box, LinearProgress, Alert, IconButton } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -8,14 +7,12 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import api from '../api';
 
 function Register() {
-  const { t } = useTranslation();
-  const [form, setForm] = useState({ username: '', password: '', email: '' });
+  const [form, setForm] = useState({ username: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [passwordStrength, setPasswordStrength] = useState(0);
 
-  // Password strength calculation
   const calculatePasswordStrength = (password) => {
     let strength = 0;
     if (password.length >= 8) strength += 25;
@@ -25,12 +22,14 @@ function Register() {
     setPasswordStrength(strength);
   };
 
-  // Form validation
   const validateForm = () => {
     const newErrors = {};
-    if (!form.username || form.username.length < 3) newErrors.username = 'Username must be at least 3 characters.';
-    if (!form.email || !/\S+@\S+\.\S+/.test(form.email)) newErrors.email = 'Invalid email address.';
-    if (!form.password || form.password.length < 6) newErrors.password = 'Password must be at least 6 characters.';
+    if (!form.username || form.username.length < 3)
+      newErrors.username = 'Username must be at least 3 characters.';
+    if (!form.email || !/\S+@\S+\.\S+/.test(form.email))
+      newErrors.email = 'Invalid email address.';
+    if (!form.password || form.password.length < 6)
+      newErrors.password = 'Password must be at least 6 characters.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -41,11 +40,14 @@ function Register() {
     setLoading(true);
     try {
       await api.post('/register', form);
-      alert('Registration successful! Please login.');
+      alert('Registration successful! Please log in.');
       window.location.href = '/login';
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.message || 'Network error or CORS issue. Check backend.';
-      setErrors({ submit: errorMessage });
+      const msg =
+        err.response?.data?.message ||
+        err.message ||
+        'Server error. Please try again.';
+      setErrors({ submit: msg });
       console.error('Register error:', err);
     } finally {
       setLoading(false);
@@ -55,16 +57,28 @@ function Register() {
   const handleChange = (field) => (e) => {
     setForm({ ...form, [field]: e.target.value });
     if (field === 'password') calculatePasswordStrength(e.target.value);
-    if (errors[field]) setErrors({ ...errors, [field]: '' });
   };
 
   return (
-    <Box sx={{ maxWidth: 500, mx: 'auto', mt: 5, p: 4, bgcolor: 'background.paper', borderRadius: 3, boxShadow: 3 }}>
-      <Typography variant="h4" gutterBottom align="center">{t('register')}</Typography>
-      {errors.submit && <Alert severity="error" sx={{ mb: 2 }}>{errors.submit}</Alert>}
+    <Box
+      sx={{
+        maxWidth: 450,
+        mx: 'auto',
+        mt: 5,
+        p: 4,
+        bgcolor: '#0f1724',
+        borderRadius: 3,
+        color: 'white',
+        boxShadow: 3,
+      }}
+    >
+      <Typography variant="h4" gutterBottom align="center">
+        Create Account
+      </Typography>
+      {errors.submit && <Alert severity="error">{errors.submit}</Alert>}
       <form onSubmit={handleSubmit}>
         <TextField
-          label={t('username')}
+          label="Username"
           fullWidth
           margin="normal"
           value={form.username}
@@ -74,7 +88,7 @@ function Register() {
           required
         />
         <TextField
-          label={t('email')}
+          label="Email"
           type="email"
           fullWidth
           margin="normal"
@@ -85,7 +99,7 @@ function Register() {
           required
         />
         <TextField
-          label={t('password')}
+          label="Password"
           type={showPassword ? 'text' : 'password'}
           fullWidth
           margin="normal"
@@ -105,22 +119,32 @@ function Register() {
         {form.password && (
           <Box sx={{ mt: 1 }}>
             <Typography variant="body2">Password Strength</Typography>
-            <LinearProgress variant="determinate" value={passwordStrength} color={passwordStrength < 50 ? 'error' : passwordStrength < 75 ? 'warning' : 'success'} />
+            <LinearProgress
+              variant="determinate"
+              value={passwordStrength}
+              color={
+                passwordStrength < 50
+                  ? 'error'
+                  : passwordStrength < 75
+                  ? 'warning'
+                  : 'success'
+              }
+            />
           </Box>
         )}
         <Button
+          type="submit"
           variant="contained"
           startIcon={<PersonAddIcon />}
           fullWidth
           sx={{ mt: 3 }}
-          onClick={handleSubmit}
           disabled={loading}
         >
-          {loading ? 'Registering...' : t('register')}
+          {loading ? 'Registering...' : 'Register'}
         </Button>
       </form>
       <Typography sx={{ mt: 2, textAlign: 'center' }}>
-        Already have an account? <Link to="/login">{t('login')}</Link>
+        Already have an account? <Link to="/login">Login</Link>
       </Typography>
     </Box>
   );
