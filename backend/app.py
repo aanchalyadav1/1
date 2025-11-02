@@ -6,12 +6,20 @@ from utils import process_image
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import os
-from flask_cors import CORS  # Ensure this is imported
+# Removed: from flask_cors import CORS  # No longer needed
 
 app = Flask(__name__)
-# Enhanced CORS: Use env var for flexibility, default to your URL
-allowed_origins = os.getenv('ALLOWED_ORIGINS', 'https://1-83xz-d8ydjkuhk-aanchal-yadavs-projects-3d4dec53.vercel.app').split(',')
-CORS(app, origins=allowed_origins)
+# Removed: CORS(app, origins=allowed_origins)  # Replaced with manual headers below
+
+# ✅ Manual CORS Headers (Method 1)
+@app.after_request
+def add_cors_headers(response):
+    response.headers['Access-Control-Allow-Origin'] = 'https://1-83xz-d8ydjkuhk-aanchal-yadavs-projects-3d4dec53.vercel.app'  # Your exact Vercel URL
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS'
+    response.headers['Access-Control-Allow-Credentials'] = 'true'  # If using cookies (optional)
+    return response
+
 app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)
@@ -42,8 +50,7 @@ def home():
             "/register (POST)", "/login (POST)", "/profile (GET/PUT)",
             "/playlists (GET/POST)", "/liked_songs (GET/POST/DELETE)",
             "/detect_emotion (POST)", "/recommend (GET)", "/forgot-password (POST)", "/version (GET)"
-        ],
-        "cors_allowed_origins": allowed_origins
+        ]
     })
 
 # ✅ Version Route: For app version checks
