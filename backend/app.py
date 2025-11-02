@@ -13,10 +13,11 @@ app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)
 
-# ✅ Use flask-cors (best for Render)
+# ✅ CORS setup (must include both frontend origins)
 CORS(app, supports_credentials=True, origins=[
-    "https://one-h4bq.onrender.com",   # your frontend URL on Render
-    "http://localhost:3000"            # for local testing
+    "https://one-h4bq.onrender.com",   # your frontend (React on Render)
+    "http://localhost:3000",           # for local testing
+    "https://one-frontend.onrender.com",  # optional fallback if you redeploy frontend
 ])
 
 # ✅ Spotify API Setup
@@ -25,6 +26,7 @@ sp = spotipy.Spotify(auth_manager=SpotifyClientCredentials(
     client_secret=Config.SPOTIFY_CLIENT_SECRET
 ))
 
+# ✅ Emotion–genre mapping
 emotion_genres = {
     'happy': 'pop',
     'sad': 'indie',
@@ -48,9 +50,9 @@ def home():
 
 @app.route('/version')
 def version():
-    return jsonify({"version": "1.0.0"})
+    return jsonify({"version": "1.0.1"})
 
-# ✅ User Register
+# ✅ Register
 @app.route('/register', methods=['POST'])
 def register():
     try:
@@ -58,14 +60,18 @@ def register():
         if not data or not all(k in data for k in ('username', 'email', 'password')):
             return jsonify({'message': 'Missing required fields'}), 400
 
+        if User.query.filter_by(email=data['email']).first():
+            return jsonify({'message': 'Email already registered'}), 400
+
         if User.query.filter_by(username=data['username']).first():
-            return jsonify({'message': 'User already exists'}), 400
+            return jsonify({'message': 'Username already taken'}), 400
 
         user = User(username=data['username'], email=data['email'])
         user.set_password(data['password'])
         db.session.add(user)
         db.session.commit()
         return jsonify({'message': 'User registered successfully!'}), 201
+
     except Exception as e:
         app.logger.error(f"Register error: {e}")
         return jsonify({'message': 'Internal Server Error'}), 500
@@ -81,7 +87,7 @@ def login():
         user = User.query.filter_by(username=data['username']).first()
         if user and user.check_password(data['password']):
             token = create_access_token(identity=user.id)
-            return jsonify({'access_token': token}), 200
+            return jsonify({'access_token': token, 'username': user.username}), 200
 
         return jsonify({'message': 'Invalid username or password'}), 401
     except Exception as e:
@@ -105,7 +111,7 @@ def profile():
         db.session.commit()
         return jsonify({'message': 'Profile updated successfully'})
 
-# ✅ Playlist Routes
+# ✅ Playlists
 @app.route('/playlists', methods=['GET', 'POST'])
 @jwt_required()
 def playlists():
@@ -125,13 +131,15 @@ def playlists():
 @jwt_required()
 def liked_songs():
     user_id = get_jwt_identity()
+    data = request.get_json() if request.is_json else {}
 
     if request.method == 'GET':
         likes = LikedSong.query.filter_by(user_id=user_id).all()
         return jsonify([l.song_id for l in likes])
 
-    data = request.get_json()
     song_id = data.get('song_id')
+    if not song_id:
+        return jsonify({'message': 'Song ID required'}), 400
 
     if request.method == 'POST':
         if not LikedSong.query.filter_by(user_id=user_id, song_id=song_id).first():
@@ -161,11 +169,22 @@ def recommend():
     language = request.args.get('language', 'en')
     genre = emotion_genres.get(emotion, 'pop')
 
-    results = sp.recommendations(seed_genres=[genre], limit=10, market=language.upper())
-    tracks = [{'id': t['id'], 'name': t['name'], 'artist': t['artists'][0]['name'], 'url': t['external_urls']['spotify']} for t in results['tracks']]
-    return jsonify(tracks)
+    try:
+        results = sp.recommendations(seed_genres=[genre], limit=10, market=language.upper())
+        tracks = [
+            {
+                'id': t['id'],
+                'name': t['name'],
+                'artist': t['artists'][0]['name'],
+                'url': t['external_urls']['spotify']
+            } for t in results['tracks']
+        ]
+        return jsonify(tracks)
+    except Exception as e:
+        app.logger.error(f"Spotify error: {e}")
+        return jsonify({'message': 'Failed to fetch recommendations'}), 500
 
-# ✅ Forgot Password
+# ✅ Forgot Password (mock)
 @app.route('/forgot-password', methods=['POST'])
 def forgot_password():
     data = request.get_json()
@@ -173,7 +192,7 @@ def forgot_password():
     app.logger.info(f"Password reset requested for {email}")
     return jsonify({'message': 'Password reset link sent (mock)'})
 
-# ✅ Main
+# ✅ Main Entry
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
