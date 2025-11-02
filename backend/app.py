@@ -9,12 +9,13 @@ import os
 
 app = Flask(__name__)
 
-# ✅ Dynamic CORS: Automatically allows Vercel origins
+# ✅ Dynamic CORS (keep for future)
 def is_allowed_origin(origin):
     if not origin:
         return False
-    # Allow any Vercel app (ends with vercel.app) or your custom domain if added later
-    return origin.endswith('.vercel.app') or origin == 'https://your-custom-domain.com'  # Replace with your domain
+    allowed = origin.endswith('.vercel.app') or origin == 'https://your-custom-domain.com'
+    app.logger.info(f"CORS check: Origin={origin}, Allowed={allowed}")
+    return allowed
 
 @app.after_request
 def add_cors_headers(response):
@@ -24,6 +25,15 @@ def add_cors_headers(response):
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-Requested-With'
         response.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS'
         response.headers['Access-Control-Allow-Credentials'] = 'true'
+        app.logger.info(f"CORS headers set for origin: {origin}")
+    return response
+
+# 🚨 TEMPORARY WILDCARD (REMOVE AFTER TESTING)
+@app.after_request
+def temp_wildcard(response):
+    response.headers['Access-Control-Allow-Origin'] = '*'  # Allows all origins
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-Requested-With'
+    response.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS'
     return response
 
 # Handle preflight OPTIONS
