@@ -18,7 +18,9 @@
     "react-webcam": "^7.2.0",
     "react-i18next": "^12.2.2",
     "i18next": "^22.5.1",
-    "i18next-browser-languagedetector": "^7.1.0"
+    "i18next-browser-languagedetector": "^7.1.0",
+    "react-tsparticles": "^2.12.0",
+    "tsparticles": "^2.12.0"
   },
   "scripts": {
     "start": "react-scripts start",
