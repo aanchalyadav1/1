@@ -1,44 +1,65 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
-import { Button, TextField, Typography, Box } from '@mui/material';
-import LoginIcon from '@mui/icons-material/Login';
-import api from '../api';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase';
+import { useNavigate, Link } from 'react-router-dom';
 
-function Login() {
-  const { t } = useTranslation();
-  const [form, setForm] = useState({ username: '', password: '' });
-  const [loading, setLoading] = useState(false);
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [err, setErr] = useState('');
+  const nav = useNavigate();
 
-  const handleSubmit = async (e) => {
+  const handle = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setErr(''); // clear previous error
+
     try {
-      const res = await api.post('/login', form);
-      localStorage.setItem('token', res.data.access_token);
-      window.location.href = '/';
-    } catch (err) {
-      // Fixed: Safe error handling for CORS/network issues
-      const errorMessage = err.response?.data?.message || err.message || 'Network error or CORS issue. Check backend and env vars.';
-      alert('Login failed: ' + errorMessage);
-      console.error('Login error:', err);  // For debugging
-    } finally {
-      setLoading(false);
+      await signInWithEmailAndPassword(auth, email, password);
+      nav('/dashboard'); // redirect after success
+    } catch (error) {
+      // make error messages more user-friendly
+      let message = 'Login failed. Please try again.';
+      if (error.code === 'auth/user-not-found') message = 'No account found with this email.';
+      else if (error.code === 'auth/wrong-password') message = 'Incorrect password.';
+      else if (error.code === 'auth/invalid-email') message = 'Invalid email format.';
+      setErr(message);
     }
   };
 
   return (
-    <Box sx={{ maxWidth: 400, mx: 'auto', mt: 5, p: 3, bgcolor: 'background.paper', borderRadius: 2 }}>
-      <Typography variant="h4" gutterBottom>{t('login')}</Typography>
-      <TextField label={t('username')} fullWidth margin="normal" onChange={(e) => setForm({ ...form, username: e.target.value })} required />
-      <TextField label={t('password')} type="password" fullWidth margin="normal" onChange={(e) => setForm({ ...form, password: e.target.value })} required />
-      <Button variant="contained" startIcon={<LoginIcon />} fullWidth onClick={handleSubmit} disabled={loading}>
-        {loading ? 'Logging in...' : t('login')}
-      </Button>
-      <Typography sx={{ mt: 2 }}>Don't have an account? <Link to="/register">{t('register')}</Link></Typography>
-      <Typography><Link to="/forgot-password">Forgot Password?</Link></Typography>
-    </Box>
+    <div className="min-h-screen flex items-center justify-center app-bg">
+      <div className="w-full max-w-md p-8 round-card">
+        <h1 className="text-3xl font-bold mb-4">Welcome Back</h1>
+        <p className="text-sm text-gray-300 mb-6">Log in to continue to AI Music</p>
+
+        <form onSubmit={handle} className="flex flex-col gap-3">
+          <input
+            required
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            className="p-3 rounded bg-[#0f1724] text-white"
+          />
+          <input
+            required
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            className="p-3 rounded bg-[#0f1724] text-white"
+          />
+          {err && <div className="text-red-400 text-sm">{err}</div>}
+          <button type="submit" className="big-btn mt-2">Login</button>
+        </form>
+
+        <p className="mt-4 text-sm text-gray-300">
+          New here?{' '}
+          <Link to="/signup" className="text-green-400">
+            Create an account
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 }
-
-export default Login;
