@@ -7,10 +7,11 @@ import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import os
 from flask_cors import CORS  # Ensure this is imported
-# ... rest of imports ...
 
 app = Flask(__name__)
-CORS(app, origins=["https://1-83xz-fvcemdbpm-aanchal-yadavs-projects-3d4dec53.vercel.app"])  # Exact URL from your error
+# Enhanced CORS: Use env var for flexibility, default to your URL
+allowed_origins = os.getenv('ALLOWED_ORIGINS', 'https://1-83xz-d8ydjkuhk-aanchal-yadavs-projects-3d4dec53.vercel.app').split(',')
+CORS(app, origins=allowed_origins)
 app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)
@@ -30,109 +31,160 @@ emotion_genres = {
     'disgust': 'classical'
 }
 
-# ✅ ADD THIS ROUTE to avoid 404 on Render root URL
+# ✅ Enhanced Home Route: Provides API info and health check
 @app.route('/')
 def home():
     return jsonify({
-        "message": "🎶 Backend is live on Render!",
+        "message": "🎶 AI Music Recommendation Backend is live on Render!",
         "status": "running",
+        "version": "1.0.0",
         "routes": [
-            "/register", "/login", "/profile",
-            "/playlists", "/liked_songs",
-            "/detect_emotion", "/recommend",
-            "/forgot-password"
-        ]
+            "/register (POST)", "/login (POST)", "/profile (GET/PUT)",
+            "/playlists (GET/POST)", "/liked_songs (GET/POST/DELETE)",
+            "/detect_emotion (POST)", "/recommend (GET)", "/forgot-password (POST)", "/version (GET)"
+        ],
+        "cors_allowed_origins": allowed_origins
     })
+
+# ✅ Version Route: For app version checks
+@app.route('/version')
+def get_version():
+    return jsonify({'version': '1.0.0'})
 
 @app.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({'message': 'User exists'}), 400
-    user = User(username=data['username'], email=data['email'])
-    user.set_password(data['password'])
-    db.session.add(user)
-    db.session.commit()
-    return jsonify({'message': 'User created'}), 201
+    try:
+        data = request.get_json()
+        if not data or not all(k in data for k in ('username', 'email', 'password')):
+            return jsonify({'message': 'Missing required fields'}), 400
+        if User.query.filter_by(username=data['username']).first():
+            return jsonify({'message': 'User exists'}), 400
+        user = User(username=data['username'], email=data['email'])
+        user.set_password(data['password'])
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({'message': 'User created'}), 201
+    except Exception as e:
+        app.logger.error(f'Register error: {e}')
+        return jsonify({'message': 'Internal server error'}), 500
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.get_json()
-    user = User.query.filter_by(username=data['username']).first()
-    if user and user.check_password(data['password']):
-        access_token = create_access_token(identity=user.id)
-        return jsonify({'access_token': access_token}), 200
-    return jsonify({'message': 'Invalid credentials'}), 401
+    try:
+        data = request.get_json()
+        if not data or not all(k in data for k in ('username', 'password')):
+            return jsonify({'message': 'Missing required fields'}), 400
+        user = User.query.filter_by(username=data['username']).first()
+        if user and user.check_password(data['password']):
+            access_token = create_access_token(identity=user.id)
+            return jsonify({'access_token': access_token}), 200
+        return jsonify({'message': 'Invalid credentials'}), 401
+    except Exception as e:
+        app.logger.error(f'Login error: {e}')
+        return jsonify({'message': 'Internal server error'}), 500
 
 @app.route('/profile', methods=['GET', 'PUT'])
 @jwt_required()
 def profile():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    if request.method == 'GET':
-        return jsonify({'username': user.username, 'email': user.email})
-    data = request.get_json()
-    user.email = data.get('email', user.email)
-    db.session.commit()
-    return jsonify({'message': 'Profile updated'})
+    try:
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+        if request.method == 'GET':
+            return jsonify({'username': user.username, 'email': user.email})
+        data = request.get_json()
+        user.email = data.get('email', user.email)
+        db.session.commit()
+        return jsonify({'message': 'Profile updated'})
+    except Exception as e:
+        app.logger.error(f'Profile error: {e}')
+        return jsonify({'message': 'Internal server error'}), 500
 
 @app.route('/playlists', methods=['GET', 'POST'])
 @jwt_required()
 def playlists():
-    user_id = get_jwt_identity()
-    if request.method == 'GET':
-        pls = Playlist.query.filter_by(user_id=user_id).all()
-        return jsonify([{'id': p.id, 'name': p.name, 'songs': [s.song_id for s in p.songs]} for p in pls])
-    data = request.get_json()
-    playlist = Playlist(name=data['name'], user_id=user_id)
-    db.session.add(playlist)
-    db.session.commit()
-    return jsonify({'id': playlist.id}), 201
+    try:
+        user_id = get_jwt_identity()
+        if request.method == 'GET':
+            pls = Playlist.query.filter_by(user_id=user_id).all()
+            return jsonify([{'id': p.id, 'name': p.name, 'songs': [s.song_id for s in p.songs]} for p in pls])
+        data = request.get_json()
+        if not data or 'name' not in data:
+            return jsonify({'message': 'Playlist name required'}), 400
+        playlist = Playlist(name=data['name'], user_id=user_id)
+        db.session.add(playlist)
+        db.session.commit()
+        return jsonify({'id': playlist.id}), 201
+    except Exception as e:
+        app.logger.error(f'Playlists error: {e}')
+        return jsonify({'message': 'Internal server error'}), 500
 
 @app.route('/liked_songs', methods=['GET', 'POST', 'DELETE'])
 @jwt_required()
 def liked_songs():
-    user_id = get_jwt_identity()
-    if request.method == 'GET':
-        likes = LikedSong.query.filter_by(user_id=user_id).all()
-        return jsonify([l.song_id for l in likes])
-    data = request.get_json()
-    song_id = data['song_id']
-    if request.method == 'POST':
-        if not LikedSong.query.filter_by(user_id=user_id, song_id=song_id).first():
-            like = LikedSong(user_id=user_id, song_id=song_id)
-            db.session.add(like)
-            db.session.commit()
-        return jsonify({'message': 'Liked'})
-    LikedSong.query.filter_by(user_id=user_id, song_id=song_id).delete()
-    db.session.commit()
-    return jsonify({'message': 'Unliked'})
+    try:
+        user_id = get_jwt_identity()
+        if request.method == 'GET':
+            likes = LikedSong.query.filter_by(user_id=user_id).all()
+            return jsonify([l.song_id for l in likes])
+        data = request.get_json()
+        if not data or 'song_id' not in data:
+            return jsonify({'message': 'Song ID required'}), 400
+        song_id = data['song_id']
+        if request.method == 'POST':
+            if not LikedSong.query.filter_by(user_id=user_id, song_id=song_id).first():
+                like = LikedSong(user_id=user_id, song_id=song_id)
+                db.session.add(like)
+                db.session.commit()
+            return jsonify({'message': 'Liked'})
+        LikedSong.query.filter_by(user_id=user_id, song_id=song_id).delete()
+        db.session.commit()
+        return jsonify({'message': 'Unliked'})
+    except Exception as e:
+        app.logger.error(f'Liked songs error: {e}')
+        return jsonify({'message': 'Internal server error'}), 500
 
 @app.route('/detect_emotion', methods=['POST'])
 @jwt_required()
 def detect_emotion():
-    file = request.files['image']
-    emotion = process_image(file)
-    return jsonify({'emotion': emotion})
+    try:
+        if 'image' not in request.files:
+            return jsonify({'message': 'No image provided'}), 400
+        file = request.files['image']
+        emotion = process_image(file)
+        return jsonify({'emotion': emotion})
+    except Exception as e:
+        app.logger.error(f'Detect emotion error: {e}')
+        return jsonify({'message': 'Emotion detection failed'}), 500
 
 @app.route('/recommend', methods=['GET'])
 @jwt_required()
 def recommend():
-    emotion = request.args.get('emotion')
-    language = request.args.get('language', 'en')
-    genre = emotion_genres.get(emotion, 'pop')
-    results = sp.recommendations(seed_genres=[genre], limit=10, market=language.upper())
-    tracks = [{'id': t['id'], 'name': t['name'], 'artist': t['artists'][0]['name'], 'url': t['external_urls']['spotify']} for t in results['tracks']]
-    return jsonify(tracks)
+    try:
+        emotion = request.args.get('emotion')
+        language = request.args.get('language', 'en')
+        genre = emotion_genres.get(emotion, 'pop')
+        results = sp.recommendations(seed_genres=[genre], limit=10, market=language.upper())
+        tracks = [{'id': t['id'], 'name': t['name'], 'artist': t['artists'][0]['name'], 'url': t['external_urls']['spotify']} for t in results['tracks']]
+        return jsonify(tracks)
+    except Exception as e:
+        app.logger.error(f'Recommend error: {e}')
+        return jsonify({'message': 'Recommendation failed'}), 500
 
-# ✅ Added Forgot Password Route (inserted after /recommend)
 @app.route('/forgot-password', methods=['POST'])
 def forgot_password():
-    data = request.get_json()
-    # Basic implementation: Log the request (expand with email sending, e.g., Flask-Mail)
-    print(f"Password reset requested for {data['email']}")
-    # In production, send email with reset token
-    return jsonify({'message': 'Reset link sent'})
+    try:
+        data = request.get_json()
+        if not data or 'email' not in data:
+            return jsonify({'message': 'Email required'}), 400
+        # Basic implementation: Log the request (expand with email sending, e.g., Flask-Mail)
+        app.logger.info(f"Password reset requested for {data['email']}")
+        # In production, send email with reset token
+        return jsonify({'message': 'Reset link sent'})
+    except Exception as e:
+        app.logger.error(f'Forgot password error: {e}')
+        return jsonify({'message': 'Internal server error'}), 500
 
 if __name__ == '__main__':
     with app.app_context():
