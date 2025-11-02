@@ -10,8 +10,7 @@ from flask_cors import CORS  # Ensure this is imported
 # ... rest of imports ...
 
 app = Flask(__name__)
-CORS(app, origins=["https://1-83xz-fvcemdbpm-aanchal-yadavs-projects-3d4dec53.vercel.app"])  # Updated to your current Vercel URL
-# ... rest of the code remains the same ...
+CORS(app, origins=["https://1-83xz-fvcemdbpm-aanchal-yadavs-projects-3d4dec53.vercel.app"])  # Exact URL from your error
 app.config.from_object(Config)
 db.init_app(app)
 jwt = JWTManager(app)
