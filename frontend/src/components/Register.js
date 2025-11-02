@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Button, TextField, Typography, Box, LinearProgress, Alert, IconButton } from '@mui/material';
@@ -14,22 +14,6 @@ function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [passwordStrength, setPasswordStrength] = useState(0);
-  const [versionCheck, setVersionCheck] = useState(null);
-
-  // Check app version on load (example: fetch from backend)
-  useEffect(() => {
-    const checkVersion = async () => {
-      try {
-        const res = await api.get('/version');  // Assume backend has /version endpoint
-        if (res.data.version !== '1.0.0') {  // Replace with your app version
-          setVersionCheck('App update available. Please refresh.');
-        }
-      } catch (err) {
-        console.log('Version check failed:', err);
-      }
-    };
-    checkVersion();
-  }, []);
 
   // Password strength calculation
   const calculatePasswordStrength = (password) => {
@@ -71,13 +55,12 @@ function Register() {
   const handleChange = (field) => (e) => {
     setForm({ ...form, [field]: e.target.value });
     if (field === 'password') calculatePasswordStrength(e.target.value);
-    if (errors[field]) setErrors({ ...errors, [field]: '' });  // Clear error on change
+    if (errors[field]) setErrors({ ...errors, [field]: '' });
   };
 
   return (
     <Box sx={{ maxWidth: 500, mx: 'auto', mt: 5, p: 4, bgcolor: 'background.paper', borderRadius: 3, boxShadow: 3 }}>
       <Typography variant="h4" gutterBottom align="center">{t('register')}</Typography>
-      {versionCheck && <Alert severity="info" sx={{ mb: 2 }}>{versionCheck}</Alert>}
       {errors.submit && <Alert severity="error" sx={{ mb: 2 }}>{errors.submit}</Alert>}
       <form onSubmit={handleSubmit}>
         <TextField
